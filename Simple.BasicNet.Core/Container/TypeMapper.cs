@@ -21,6 +21,7 @@ namespace Simple.BasicNet.Core
 		{
 			Original= original;
 			Target= target;
+			LifeCycle= lifeCycle;
 		}
 
 		public TypeMapper(Type original, Type target):this(original, target, eLifeCycle.Instant)
@@ -59,6 +60,17 @@ namespace Simple.BasicNet.Core
 				&& !Target.GetInterfaces().Any(t => t.FullName == Original.FullName))
 				throw new Exception("注册失败,TTarget类型必须继承或者实现Original类型!");
 			var inter = Target.GetInterfaces().FirstOrDefault(t => t.FullName == Original.FullName);
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="targetType"></param>
+		/// <returns></returns>
+		public bool IsTargetType(Type targetType)
+		{
+			if (Original.FullName == targetType.FullName || Target.FullName == targetType.FullName)
+				return true;
+			return false;
 		}
 	}
 }

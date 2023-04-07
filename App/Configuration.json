@@ -1,0 +1,7 @@
+{
+  "IpAddress": "172.16.1.128",
+  "SocketType": 1,
+  "ProtocolType": 6,
+  "Port": 1024,
+  "Backlog": 200
+}

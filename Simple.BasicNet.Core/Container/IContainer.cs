@@ -17,11 +17,19 @@ namespace Simple.BasicNet.Core
 {
 	public interface IContainer
 	{
-		public void Register<TOriginal, TTarget>();
 		public void Register<TTarget>();
+		public void Register<TOriginal, TTarget>();
 		public void Register(Type targetType);
 		public void Register(Type originalType, Type targetType);
+		public void RegisterSingleton<TTarget>();
+		public void RegisterSingleton<TOriginal, TTarget>();
+
+		public void RegisterSingleton<TTarget>(TTarget target) where TTarget : class;
+		public void RegisterSingleton(Type Target);
+		public void RegisterSingleton(Type Original, Type Target);
 		public Target GetService<Target>();
 		public object GetService(Type target);
+
+		
 	}
 }

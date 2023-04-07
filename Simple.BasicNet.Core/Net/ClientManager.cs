@@ -28,13 +28,15 @@ namespace Simple.BasicNet.Core.Net
 			this.container = container;
 		}
 
-		public void AddClient(Socket client)
+		public bool AddClient(Socket client)
 		{
 			if (!clientsDic.ContainsKey(client))
 			{
 				ClientSocket clientSocket = new ClientSocket(container,client);
 				clientsDic.TryAdd(client,clientSocket);
+				return true;
 			}
+			return false;
 		}
 	}
 }

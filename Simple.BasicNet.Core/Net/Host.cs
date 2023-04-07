@@ -5,6 +5,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Simple.BasicNet.Core.Configuration;
+using Simple.BasicNet.Core.Handle;
 
 /*********************************************************
  * 命名空间 Simple.BasicNet.Core.Net
@@ -17,16 +19,18 @@ using System.Threading.Tasks;
  * *******************************************************/
 namespace Simple.BasicNet.Core.Net
 {
-	public class Host
+    public class Host
 	{
 		Socket serviceSocket;
 		ServiceConfigution serviceConfigution;
 		ClientManager clientManager;
 		IContainer container;
+
 		public Host() 
 		{
-			serviceConfigution = new ServiceConfigution();
-			container = new Container();
+
+		    serviceConfigution = new ServiceConfigution();
+			container=Container.BuilderContainer();
 			clientManager = new ClientManager(container);
 		}
 		public Host ConfigutionMessageHandle<TMessageHandle>()where TMessageHandle:IMessageHandle
@@ -42,43 +46,60 @@ namespace Simple.BasicNet.Core.Net
 			return this;
 		}
 
-		public  void Start(Action<ServiceConfigution> SetConfigution)
+		public  void Start(Action<ServiceConfigution>SetConfigution)
 		{
-			if (SetConfigution != null)
+			if (SetConfigution!=null)
 			{
 				SetConfigution.Invoke(serviceConfigution);
 			}
+			Start();
+		}
 
-			IPEndPoint endPoint = new IPEndPoint(serviceConfigution.GetIpAddress(),serviceConfigution.Port);
-		    serviceSocket = new Socket(endPoint.AddressFamily, serviceConfigution.SocketType, serviceConfigution.ProtocolType);
+		public void Start(string ConfigurationPath)
+		{
+			ConfigurationBulder configurationBulder = new ConfigurationBulder(ConfigurationPath);
+			serviceConfigution= configurationBulder.GetConfigution();
+			Start();
+
+		}
+		public void Start()
+		{
+			IPEndPoint endPoint = new IPEndPoint(serviceConfigution.GetIpAddress(), serviceConfigution.Port);
+			serviceSocket = new Socket(endPoint.AddressFamily, serviceConfigution.SocketType, serviceConfigution.ProtocolType);
+			ConsoleLog.DEBUGLOG("服务器启动成功!");
+			ConsoleLog.DEBUGLOG($"{endPoint.Address.ToString()}:{serviceConfigution.Port}");
+			InitalizationContainer();
 			serviceSocket.Bind(endPoint);
 			serviceSocket.Listen(serviceConfigution.Backlog);
 			ServiceAccept();
 		}
-
 		public void InitalizationContainer()
 		{
-			container.Register<IMessageHandle,MessageHandle>();
+			container.RegisterSingleton(serviceConfigution);
+			container.RegisterSingleton<IMessageHandle,MessageHandle>();
+			container.Register<HandleContext>();
+			ConsoleLog.DEBUGLOG("容器初始化成功!");
 		}
 
 		public void ServiceAccept()
 		{
-			while (true)
-			{
-				try
+				while (true)
 				{
-					var client = serviceSocket.Accept();
-					clientManager.AddClient(client);
-				}
-				catch (Exception ex)
-				{
-#if DEBUG
-					Console.WriteLine(ex.Message);
-					Console.WriteLine(ex.InnerException.Message);
-#endif
-				}
+					try
+					{
+						var client = serviceSocket.Accept();
+						if (clientManager.AddClient(client))
+						{
+							ConsoleLog.DEBUGLOG($"{client.RemoteEndPoint.ToString()}链接成功!");
+						}
+					}
+					catch (Exception ex)
+					{
+						ConsoleLog.DEBUGLOG(ex.Message);
+						ConsoleLog.DEBUGLOG(ex.InnerException.Message);
+					}
 
-			}
+				}
 		}
 	}
 }

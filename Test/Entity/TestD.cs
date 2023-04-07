@@ -5,17 +5,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 /*********************************************************
- * 命名空间 Simple.BasicNet.Core.Net
- * 接口名称 MessageHandle
+ * 命名空间 Test.Entity
+ * 接口名称 TestD
  * 开发人员：11920
- * 创建时间：2023/4/6 16:29:04
+ * 创建时间：2023/4/7 15:47:57
  * 描述说明：
  * 更改历史：
  * 
  * *******************************************************/
-namespace Simple.BasicNet.Core.Net
+namespace Test.Entity
 {
-	public class MessageHandle:IMessageHandle
+	public class TestD: ITestD
+	{
+
+	}
+
+	public interface ITestD
 	{
 
 	}

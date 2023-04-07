@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Simple.BasicNet.Core.Handle;
 
 /*********************************************************
  * 命名空间 Simple.BasicNet.Core.Net
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
  * *******************************************************/
 namespace Simple.BasicNet.Core.Net
 {
-	public class ClientSocket
+    public class ClientSocket
 	{
 	
 		public ClientSocket(IContainer container,Socket socket)
@@ -28,16 +29,19 @@ namespace Simple.BasicNet.Core.Net
 			Client = socket;
 			ConnectionID=Guid.NewGuid();
 			this.container = container;
+			messageHandle = container.GetService<IMessageHandle>();
+
+
+			receiveBuffer=new byte[1024*1024];
+			Receive();
 		}
 		public Socket Client { get { return client; } set { client = value; } }
 		public Guid ConnectionID { get { return connectionID; } set { connectionID = value; } }
-		public IMessageHandle MessageHandle { get { return messageHandle; } set { messageHandle = value; } }
 
 		private Socket client;
 		private Guid connectionID;
 		private byte[] receiveBuffer;
 		private byte[] sendBuffer;
-		private int length;
 		private IMessageHandle messageHandle;
 		private IContainer container;
 
@@ -47,7 +51,36 @@ namespace Simple.BasicNet.Core.Net
 		}
 		public void Receive()
 		{
-			length=client.Receive(receiveBuffer);
+			HandleContext context = container.GetService<HandleContext>();
+
+			context.SetSend((sendBuffer) => Send(sendBuffer));
+
+			//阻塞方法
+			Task.Run(() =>
+			{
+				while (true)
+				{
+					try
+					{
+						context.Length = client.Receive(receiveBuffer);
+
+						Array.Copy(receiveBuffer,context.ReceiveBuffer,context.Length);
+
+						messageHandle.Handle(context);
+					}
+					catch (Exception ex)
+					{
+
+						ConsoleLog.DEBUGLOG(ex.Message);
+						ConsoleLog.DEBUGLOG(ex.InnerException.Message);
+
+						client.Close();
+						client.Disconnect(true);
+						throw;
+					}
+				}
+			});
+
 		}
 	}
 }
