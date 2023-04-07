@@ -20,6 +20,8 @@ namespace Test
 			container.Register<ITestA, TestA>();
 			container.Register<ITestB, TestB>();
 			container.Register<ITestC, TestC>();
+
+
 			container.RegisterSingleton<ITestD, TestD>();
 		}
 
