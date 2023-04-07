@@ -13,7 +13,8 @@ public class Program
 		var str =File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration.json"));
 
 		var Cinfiguration =JsonConvert.DeserializeObject<ServiceConfigution>(str);
-		Host host= new Host();
+
+		IHost host= Host.BuilderHost().CheckHeart();
 		host.Start((configution) =>
 		{
 			configution.Port = 1234;

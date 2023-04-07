@@ -28,14 +28,18 @@ namespace App.Handle
 		[MessageNumber(11)]
 		public void Test11()
 		{
+			string msg = "我是:Ahandle;我的消息号码为11！";
 			Console.WriteLine("我是:Ahandle;我的消息号码为11！");
+			context.Send(msg);
 		}
 
 
 		[MessageNumber(12)]
 		public void Test12()
 		{
+			string msg = "我是:Ahandle;我的消息号码为12！";
 			Console.WriteLine("我是:Ahandle;我的消息号码为12！");
+			context.Send(msg);
 		}
 	}
 }

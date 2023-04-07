@@ -21,15 +21,19 @@ namespace App.Handle
 	{
 		public TestHandle() { }
 
-		[MessageNumber(31)]
-		public void Test31()
+		[MessageNumber(33)]
+		public void Test33()
 		{
-			Console.WriteLine("我是:TestHandle;我的消息号码为31！");
+			string msg = "我是:TestHandle;我的消息号码为33！";
+			Console.WriteLine(msg);
+			context.Send(msg);
 		}
 		[MessageNumber(32)]
 		public void Test32()
 		{
-			Console.WriteLine("我是:TestHandle;我的消息号码为32！");
+			string msg = "我是:TestHandle;我的消息号码为32！";
+			Console.WriteLine(msg);
+			context.Send(msg);
 		}
 	}
 }

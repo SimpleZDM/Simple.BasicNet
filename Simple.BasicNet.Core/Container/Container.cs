@@ -188,7 +188,7 @@ namespace Simple.BasicNet.Core
 			{
 				var typeMapper = typeMapperDic.FirstOrDefault(mapper => mapper.Value.IsTargetType(target)).Value;
 				//单例就返回
-				if (typeMapper.LifeCycle == eLifeCycle.Single)
+				if (typeMapper.LifeCycle == eLifeCycle.Single&&typeMapper.Instance!=null)
 				{
 					return typeMapper.Instance;
 				}

@@ -54,6 +54,11 @@ namespace Simple.BasicNet.Core.Handle
 			send.Invoke(bytes);
 		}
 
+		public void Send(string msg)
+		{
+			Send(Encoding.UTF8.GetBytes(msg));
+		}
+
 		public void SetSend(Action<byte[]> action)
 		{
 			send=action;

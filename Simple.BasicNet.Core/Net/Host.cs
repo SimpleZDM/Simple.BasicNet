@@ -19,69 +19,81 @@ using Simple.BasicNet.Core.Handle;
  * *******************************************************/
 namespace Simple.BasicNet.Core.Net
 {
-    public class Host
+    public class Host: IHost
 	{
 		Socket serviceSocket;
 		ServiceConfigution serviceConfigution;
-		ClientManager clientManager;
+		IClientManager clientManager;
 		IContainer container;
-
-		public Host() 
+		IPretty prettyCore;
+		public static IHost BuilderHost()
+		{
+			return new Host();
+		}
+		private Host() 
 		{
 
-		    serviceConfigution = new ServiceConfigution();
 			container=Container.BuilderContainer();
-			clientManager = new ClientManager(container);
+			InitalizationContainer();
+			container.RegisterSingleton<IClientManager, ClientManager>();
+			clientManager = container.GetService<IClientManager>();
 		}
-		public Host ConfigutionMessageHandle<TMessageHandle>()where TMessageHandle:IMessageHandle
+		public IHost ConfigutionMessageHandle<TMessageHandle>()where TMessageHandle:IMessageHandle
 		{
 			//type
 			container.Register<IMessageHandle,TMessageHandle>();
 			return this;
 		}
-		public Host ConfigutionContainer(IContainer container)
+		public IHost ConfigutionContainer(IContainer container)
 		{
 			//type
 			this.container = container;
 			return this;
 		}
 
-		public  void Start(Action<ServiceConfigution>SetConfigution)
+		public  IHost Start(Action<ServiceConfigution>SetConfigution)
 		{
+			serviceConfigution = container.GetService<ServiceConfigution>();
 			if (SetConfigution!=null)
 			{
 				SetConfigution.Invoke(serviceConfigution);
 			}
-			Start();
+			return Start();
 		}
 
-		public void Start(string ConfigurationPath)
+		public IHost Start(string ConfigurationPath)
 		{
 			ConfigurationBulder configurationBulder = new ConfigurationBulder(ConfigurationPath);
 			serviceConfigution= configurationBulder.GetConfigution();
-			Start();
+			return Start();
 
 		}
-		public void Start()
+		public IHost Start()
 		{
 			IPEndPoint endPoint = new IPEndPoint(serviceConfigution.GetIpAddress(), serviceConfigution.Port);
 			serviceSocket = new Socket(endPoint.AddressFamily, serviceConfigution.SocketType, serviceConfigution.ProtocolType);
 			ConsoleLog.DEBUGLOG("服务器启动成功!");
 			ConsoleLog.DEBUGLOG($"{endPoint.Address.ToString()}:{serviceConfigution.Port}");
-			InitalizationContainer();
 			serviceSocket.Bind(endPoint);
 			serviceSocket.Listen(serviceConfigution.Backlog);
 			ServiceAccept();
-		}
-		public void InitalizationContainer()
-		{
-			container.RegisterSingleton(serviceConfigution);
-			container.RegisterSingleton<IMessageHandle,MessageHandle>();
-			container.Register<HandleContext>();
-			ConsoleLog.DEBUGLOG("容器初始化成功!");
+			return this;
 		}
 
-		public void ServiceAccept()
+		public IHost CheckHeart()
+		{
+			clientManager.CheckHeart();
+			return this;
+		}
+		private void InitalizationContainer()
+		{
+			container.Register<HandleContext>();
+			container.RegisterSingleton<ServiceConfigution>();
+			container.RegisterSingleton<IMessageHandle,MessageHandle>();
+			container.RegisterSingleton<IPretty,Pretty>();
+			ConsoleLog.DEBUGLOG("容器初始化成功!");
+		}
+		private void ServiceAccept()
 		{
 				while (true)
 				{

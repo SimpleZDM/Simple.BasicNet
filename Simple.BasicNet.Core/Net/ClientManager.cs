@@ -17,26 +17,35 @@ using System.Threading.Tasks;
  * *******************************************************/
 namespace Simple.BasicNet.Core.Net
 {
-	public class ClientManager
+	public class ClientManager: IClientManager
 	{
-		ConcurrentDictionary<Socket,ClientSocket> clientsDic;
-		private Type messageHandleType;
+	    private	ConcurrentDictionary<Guid,ClientSocket> clientsDic;
 		private IContainer container;
 		public ClientManager(IContainer container)
 		{
-			clientsDic=new ConcurrentDictionary<Socket, ClientSocket>();
+			clientsDic=new ConcurrentDictionary<Guid, ClientSocket>();
 			this.container = container;
 		}
 
 		public bool AddClient(Socket client)
 		{
-			if (!clientsDic.ContainsKey(client))
-			{
 				ClientSocket clientSocket = new ClientSocket(container,client);
-				clientsDic.TryAdd(client,clientSocket);
-				return true;
-			}
-			return false;
+				return clientsDic.TryAdd(clientSocket.ConnectionID, clientSocket);
 		}
+
+		public void CheckHeart()
+		{
+			//throw new NotImplementedException();
+		}
+
+		public  void RemoveClient(Guid ClientID)
+		{
+			if (clientsDic.ContainsKey(ClientID))
+			{
+				clientsDic.TryRemove(ClientID);
+			}
+		}
+
+
 	}
 }

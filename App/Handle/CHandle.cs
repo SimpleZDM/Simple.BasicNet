@@ -2,33 +2,33 @@
 using Simple.BasicNet.Core.Handle;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 /*********************************************************
  * 命名空间 App.Handle
- * 接口名称 BHandle
+ * 接口名称 CHandle
  * 开发人员：11920
- * 创建时间：2023/4/6 10:17:13
+ * 创建时间：2023/4/7 16:54:39
  * 描述说明：
  * 更改历史：
  * 
  * *******************************************************/
 namespace App.Handle
 {
-    [NumberRange(21, 30)]
-	public class BHandle: BaseHandle
+	[NumberRange(41, 50)]
+	internal class CHandle:BaseHandle
 	{
+		public CHandle() { }
 
-		public BHandle() { }
-
-		[MessageNumber(22)]
-		public void Test22()
+		[MessageNumber(44)]
+		public void Test44()
 		{
-			string msg = "我是:BHandle;我的消息号码为22！";
+			string msg = "我是:BHandle;我的消息号码为44！";
 			Console.WriteLine(msg);
-		    context.Send(msg);
+			context.Send(msg);
 		}
 
 		public void Test23()

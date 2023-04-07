@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,9 +31,9 @@ namespace Simple.BasicNet.Core.Net
 			ConnectionID=Guid.NewGuid();
 			this.container = container;
 			messageHandle = container.GetService<IMessageHandle>();
+			clientManager=container.GetService<IClientManager>();
 
-
-			receiveBuffer=new byte[1024*1024];
+			receiveBuffer =new byte[1024*1024];
 			Receive();
 		}
 		public Socket Client { get { return client; } set { client = value; } }
@@ -44,17 +45,18 @@ namespace Simple.BasicNet.Core.Net
 		private byte[] sendBuffer;
 		private IMessageHandle messageHandle;
 		private IContainer container;
+		private IClientManager clientManager;
 
-		public void Send(byte[] sendBuffer)
+		public void Send(byte[] buffer)
 		{
-			//client.Send();
+			client.Send(buffer);
 		}
 		public void Receive()
 		{
 			HandleContext context = container.GetService<HandleContext>();
 
 			context.SetSend((sendBuffer) => Send(sendBuffer));
-
+			
 			//阻塞方法
 			Task.Run(() =>
 			{
@@ -63,8 +65,10 @@ namespace Simple.BasicNet.Core.Net
 					try
 					{
 						context.Length = client.Receive(receiveBuffer);
-
+						context.ReceiveBuffer=new byte[context.Length];
 						Array.Copy(receiveBuffer,context.ReceiveBuffer,context.Length);
+
+						messageHandle.AnalysisHandle(context);
 
 						messageHandle.Handle(context);
 					}
@@ -76,7 +80,8 @@ namespace Simple.BasicNet.Core.Net
 
 						client.Close();
 						client.Disconnect(true);
-						throw;
+
+						clientManager.RemoveClient(ConnectionID);
 					}
 				}
 			});

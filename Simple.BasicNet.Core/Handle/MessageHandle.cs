@@ -52,7 +52,7 @@ namespace Simple.BasicNet.Core.Handle
             #endregion
 
             #region Code
-            context.CommandID = context.ReceiveBuffer[3];
+            context.CommandID = context.ReceiveBuffer[2];
             #endregion
 
 
