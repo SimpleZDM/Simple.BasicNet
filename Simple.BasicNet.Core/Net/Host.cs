@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Simple.BasicNet.Core.Atrributes;
 using Simple.BasicNet.Core.Configuration;
 using Simple.BasicNet.Core.Handle;
 
@@ -21,12 +22,15 @@ namespace Simple.BasicNet.Core.Net
 {
     public class Host: IHost
 	{
-		Socket serviceSocket;
-		ServiceConfigution serviceConfigution;
-		IClientManager clientManager;
 		IContainer container;
-		IPretty prettyCore;
-		public static IHost BuilderHost()
+
+        ServiceConfigution serviceConfigution;
+
+		[Autowired]
+		IPretty prettyCore { get; set; }
+		[Autowired]
+        IClientManager clientManager { get; set; }
+        public static IHost BuilderHost()
 		{
 			return new Host();
 		}
@@ -35,18 +39,14 @@ namespace Simple.BasicNet.Core.Net
 
 			container=Container.BuilderContainer();
 			InitalizationContainer();
-			container.RegisterSingleton<IClientManager, ClientManager>();
-			clientManager = container.GetService<IClientManager>();
 		}
 		public IHost ConfigutionMessageHandle<TMessageHandle>()where TMessageHandle:IMessageHandle
 		{
-			//type
-			container.Register<IMessageHandle,TMessageHandle>();
+			container.RegisterSingleton<IMessageHandle,TMessageHandle>();
 			return this;
 		}
 		public IHost ConfigutionContainer(IContainer container)
 		{
-			//type
 			this.container = container;
 			return this;
 		}
@@ -70,13 +70,7 @@ namespace Simple.BasicNet.Core.Net
 		}
 		public IHost Start()
 		{
-			IPEndPoint endPoint = new IPEndPoint(serviceConfigution.GetIpAddress(), serviceConfigution.Port);
-			serviceSocket = new Socket(endPoint.AddressFamily, serviceConfigution.SocketType, serviceConfigution.ProtocolType);
-			ConsoleLog.DEBUGLOG("服务器启动成功!");
-			ConsoleLog.DEBUGLOG($"{endPoint.Address.ToString()}:{serviceConfigution.Port}");
-			serviceSocket.Bind(endPoint);
-			serviceSocket.Listen(serviceConfigution.Backlog);
-			ServiceAccept();
+			prettyCore.Start();
 			return this;
 		}
 
@@ -91,27 +85,8 @@ namespace Simple.BasicNet.Core.Net
 			container.RegisterSingleton<ServiceConfigution>();
 			container.RegisterSingleton<IMessageHandle,MessageHandle>();
 			container.RegisterSingleton<IPretty,Pretty>();
-			ConsoleLog.DEBUGLOG("容器初始化成功!");
-		}
-		private void ServiceAccept()
-		{
-				while (true)
-				{
-					try
-					{
-						var client = serviceSocket.Accept();
-						if (clientManager.AddClient(client))
-						{
-							ConsoleLog.DEBUGLOG($"{client.RemoteEndPoint.ToString()}链接成功!");
-						}
-					}
-					catch (Exception ex)
-					{
-						ConsoleLog.DEBUGLOG(ex.Message);
-						ConsoleLog.DEBUGLOG(ex.InnerException.Message);
-					}
-
-				}
+            container.RegisterSingleton<IClientManager, ClientManager>();
+            ConsoleLog.DEBUGLOG("容器初始化成功!");
 		}
 	}
 }

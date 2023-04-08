@@ -42,7 +42,7 @@ namespace Simple.BasicNet.Core.Net
 		{
 			if (clientsDic.ContainsKey(ClientID))
 			{
-				clientsDic.TryRemove(ClientID);
+				clientsDic.TryRemove(ClientID,out ClientSocket client);
 			}
 		}
 

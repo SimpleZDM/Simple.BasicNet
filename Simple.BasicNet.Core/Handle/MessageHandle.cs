@@ -36,7 +36,7 @@ namespace Simple.BasicNet.Core.Handle
 
 
         /// <summary>
-        /// 解析消息 可以自行扩展
+        /// 
         /// </summary>
         /// <param name="context"></param>
         public void AnalysisHandle(HandleContext context)
@@ -54,7 +54,6 @@ namespace Simple.BasicNet.Core.Handle
             #region Code
             context.CommandID = context.ReceiveBuffer[2];
             #endregion
-
 
             #region extand data verify 
 
