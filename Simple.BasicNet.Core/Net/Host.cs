@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using Simple.BasicNet.Core.Atrributes;
 using Simple.BasicNet.Core.Configuration;
 using Simple.BasicNet.Core.Handle;
+using Simple.BasicNet.Core.Schedule;
 
 /*********************************************************
  * 命名空间 Simple.BasicNet.Core.Net
@@ -23,70 +25,127 @@ namespace Simple.BasicNet.Core.Net
     public class Host: IHost
 	{
 		IContainer container;
-
         ServiceConfigution serviceConfigution;
-
-		[Autowired]
 		IPretty prettyCore { get; set; }
-		[Autowired]
-        IClientManager clientManager { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
         public static IHost BuilderHost()
 		{
 			return new Host();
 		}
-		private Host() 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public IHost Start()
 		{
-
-			container=Container.BuilderContainer();
-			InitalizationContainer();
-		}
-		public IHost ConfigutionMessageHandle<TMessageHandle>()where TMessageHandle:IMessageHandle
-		{
-			container.RegisterSingleton<IMessageHandle,TMessageHandle>();
+			prettyCore = container.GetService<IPretty>();
+			prettyCore.Start();
 			return this;
 		}
-		public IHost ConfigutionContainer(IContainer container)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ConfigurationPath"></param>
+		/// <returns></returns>
+		public IHost Start(string ConfigurationPath)
 		{
-			this.container = container;
-			return this;
-		}
+			ConfigurationBulder configurationBulder = new ConfigurationBulder(ConfigurationPath);
+			serviceConfigution = configurationBulder.GetConfigution();
+			return Start();
 
-		public  IHost Start(Action<ServiceConfigution>SetConfigution)
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="SetConfigution"></param>
+		/// <returns></returns>
+		public IHost Start(Action<ServiceConfigution>SetConfigution)
 		{
-			serviceConfigution = container.GetService<ServiceConfigution>();
+			serviceConfigution =container.GetService<ServiceConfigution>();
 			if (SetConfigution!=null)
 			{
 				SetConfigution.Invoke(serviceConfigution);
 			}
 			return Start();
 		}
-
-		public IHost Start(string ConfigurationPath)
+		/// <summary>
+		/// 替换容器之后需要重新注册
+		/// </summary>
+		/// <returns></returns>
+		public IHost ReplaceContainer(IContainer container)
 		{
-			ConfigurationBulder configurationBulder = new ConfigurationBulder(ConfigurationPath);
-			serviceConfigution= configurationBulder.GetConfigution();
-			return Start();
-
-		}
-		public IHost Start()
-		{
-			prettyCore.Start();
+			container=Container.SetContainer(container);
+			Initalization();
 			return this;
 		}
-
-		public IHost CheckHeart()
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="action"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public IHost Regster(Action<IContainer> action)
 		{
-			clientManager.CheckHeart();
+			if (action==null)
+			{
+				throw new ArgumentNullException(nameof(action));
+			}
+			action.Invoke(container);
 			return this;
 		}
-		private void InitalizationContainer()
+		/// <summary>
+		/// 注册任务然后启动任务
+		/// </summary>
+		/// <param name="action"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// 
+		public IHost RegisterSchedule(Action<IScheduleManager> action)
 		{
-			container.Register<HandleContext>();
-			container.RegisterSingleton<ServiceConfigution>();
-			container.RegisterSingleton<IMessageHandle,MessageHandle>();
-			container.RegisterSingleton<IPretty,Pretty>();
-            container.RegisterSingleton<IClientManager, ClientManager>();
-            ConsoleLog.DEBUGLOG("容器初始化成功!");
+			if (action==null)
+			{
+				throw new ArgumentNullException(nameof(action));
+			}
+			var scheduleManager = container.GetService<IScheduleManager>();
+			action.Invoke(scheduleManager);
+			scheduleManager.Start();
+			return this;
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="TMessageHandle"></typeparam>
+		/// <returns></returns>
+		public IHost ConfigutionMessageHandle<TMessageHandle>() where TMessageHandle : IMessageHandle
+		{   
+			container.RegisterSingleton<IMessageHandle, TMessageHandle>().Autowird();
+			return this;
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		private Host()
+		{
+			container = Container.GetContainer();
+			Initalization();
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="container"></param>
+		/// <returns></returns>
+		private void Initalization()
+		{
+			container.Register<HandleContext>().Autowird();
+			container.RegisterSingleton<ServiceConfigution>().Autowird();
+			container.RegisterSingleton<IMessageHandle,MessageHandle>().Autowird();
+            container.RegisterSingleton<IClientManager, ClientManager>().Autowird();
+			container.RegisterSingleton<IScheduleManager, ScheduleManager>().Autowird();
+			container.RegisterSingleton<IPretty, Pretty>().Autowird();
+			ConsoleLog.DEBUGLOG("容器初始化成功!");
 		}
 	}
 }

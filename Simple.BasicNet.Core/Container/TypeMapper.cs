@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Simple.BasicNet.Core.Atrributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,20 +16,23 @@ using System.Threading.Tasks;
  * *******************************************************/
 namespace Simple.BasicNet.Core
 {
-	internal class TypeMapper
+	internal class TypeMapper:ITypeMapper
 	{
 	    public TypeMapper(Type original,Type target,eLifeCycle lifeCycle)
 		{
 			Original= original;
-			Target= target;
+			Target = new Dictionary<string,Tuple<Type, object>>();
+			AddTarget(target);
 			LifeCycle= lifeCycle;
+			IsAutowired = false;
+			AutowiredType = typeof(AutowiredAttribute);
 		}
 
-		public TypeMapper(Type original, Type target):this(original, target, eLifeCycle.Instant)
+		public TypeMapper(Type original,Type target):this(original, target, eLifeCycle.Instant)
 		{
 		}
 
-		public TypeMapper(Type target,eLifeCycle lifeCycle) :this(target,target,lifeCycle)
+		public TypeMapper(Type target,eLifeCycle lifeCycle):this(target,target,lifeCycle)
 		{
 
 		}
@@ -37,40 +41,70 @@ namespace Simple.BasicNet.Core
 		}
 
 		public Type Original { get { return original; } set { original = value; } }
-		public Type Target { get { return target; } set { target = value; } }
+		public Dictionary<string,Tuple<Type,object>> Target { get { return target; } set { target = value; } }
 		public eLifeCycle LifeCycle { get { return lifeCycle; } set { lifeCycle = value; } }
-		public object Instance { get {return _instance; } set { _instance = value; } }
+		public string TargetKey { get {return targetKey; } set { targetKey = value; } }
+		public bool IsAutowired { get {return isAutowired; } set { isAutowired = value; } }
+		public Type AutowiredType { get {return autowiredType; } set { autowiredType = value; } }
 
 		private Type original;
-		private Type target;
+		private Dictionary<string,Tuple<Type,object>> target;
 		private eLifeCycle lifeCycle;
-		private object _instance;
+		private string targetKey;
+		private bool isAutowired;
+		private Type autowiredType;
+
+		public void AddTarget(Type target)
+		{
+			if (!Target.ContainsKey(target.FullName))
+			{
+				TargetKey= target.FullName;
+				Target.Add(TargetKey,Tuple.Create<Type,object>(target,null));
+			}
+		}
 		public string GetTypeMapperKey()
 		{
-			if (Original== Target)
-			{
-				return Target.FullName;
-			}
-			return $"{Original.FullName}_To_{Target.FullName}";
+			return $"{Original.FullName}";
 		}
-
 		public void Verify()
 		{
-			if (!Target.IsAssignableTo(Original)
-				&& !Target.GetInterfaces().Any(t => t.FullName == Original.FullName))
+			if (!GetTargetType(TargetKey).IsAssignableTo(Original)
+				&& !GetTargetType(TargetKey).GetInterfaces().Any(t => t.FullName == Original.FullName))
 				throw new Exception("注册失败,TTarget类型必须继承或者实现Original类型!");
-			var inter = Target.GetInterfaces().FirstOrDefault(t => t.FullName == Original.FullName);
 		}
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="targetType"></param>
-		/// <returns></returns>
-		public bool IsTargetType(Type targetType)
+		public Type GetTargetType(string key)
 		{
-			if (Original.FullName == targetType.FullName || Target.FullName == targetType.FullName)
-				return true;
-			return false;
+			if (Target.ContainsKey(key))
+			{
+				return Target[key].Item1;
+			}
+			return default(Type);
 		}
+		public object GetInstance(string key)
+		{
+			if (Target.ContainsKey(key))
+			{
+				return Target[key].Item2;
+			}
+			return default(object);
+		}
+		public void SetInstance(string key,object target)
+		{
+			if (Target.ContainsKey(key))
+			{
+				Target[key]=Tuple.Create<Type,object>(target.GetType(),target);
+			}
+		}
+		#region 
+		public void Autowired()
+		{
+			this.isAutowired= true;
+		}
+		public void Autowired(Type type)
+		{
+			autowiredType=type;
+			Autowired();
+		}
+		#endregion
 	}
 }

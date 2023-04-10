@@ -13,7 +13,5 @@ namespace Simple.BasicNet.Core.Net
 
 		public bool AddClient(Socket client);
 		public void RemoveClient(Guid ClientID);
-		public void CheckHeart();
-		
 	}
 }

@@ -33,10 +33,7 @@ namespace Simple.BasicNet.Core.Net
 				return clientsDic.TryAdd(clientSocket.ConnectionID, clientSocket);
 		}
 
-		public void CheckHeart()
-		{
-			//throw new NotImplementedException();
-		}
+		
 
 		public  void RemoveClient(Guid ClientID)
 		{

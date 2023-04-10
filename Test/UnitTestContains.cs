@@ -1,6 +1,6 @@
 using Simple.BasicNet.Core;
 using System.ComponentModel;
-using MyContainer= Simple.BasicNet.Core.Container;
+//using MyContainer= Simple.BasicNet.Core.Container;
 using IMyContainer= Simple.BasicNet.Core.IContainer;
 using NUnit.Framework.Internal;
 using Test.Entity;
@@ -16,13 +16,13 @@ namespace Test
 		[SetUp]
 		public void Setup()
 		{
-			container = MyContainer.BuilderContainer();
+			//container =MyContainer.GetContainer();
 			container.Register<ITestA, TestA>();
 			container.Register<ITestB, TestB>();
-			container.Register<ITestC, TestC>();
-
-
-			container.RegisterSingleton<ITestD, TestD>();
+			container.Register<ITestC, TestC>().Autowird(typeof(TestAutowiredAttribute));
+			container.Register<ITestD, TestD>();
+			container.Register<ITestD, TestD1>();
+			//container.RegisterSingleton<ITestD, TestD>();
 		}
 
 		[Test]
@@ -49,7 +49,7 @@ namespace Test
 		[Test]
 		public void TestGetServiceAutowired()
 		{
-			TestC testC = container.GetService<TestC>();
+			ITestC testC = container.GetService<ITestC>();
 			Assert.IsNotNull(testC, "测试属性注入存在问题!");
 		}
 

@@ -1,11 +1,15 @@
-﻿using Simple.BasicNet.Core.Atrributes;
+﻿using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
+using Simple.BasicNet.Core.Atrributes;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 /*********************************************************
  * 命名空间 Simple.BasicNet.Core
@@ -18,110 +22,141 @@ using System.Threading.Tasks;
  * *******************************************************/
 namespace Simple.BasicNet.Core
 {
-	public class Container:IContainer
+	internal class Container:IContainer
 	{
-
-		public static IContainer BuilderContainer()
+		private static object oLock = new object();
+		private static IContainer instance;
+		public static IContainer SetContainer(IContainer container)
 		{
-			return new Container();
+			instance = container;
+			return instance;
 		}
+
+		public static IContainer GetContainer()
+		{
+			if (instance==null)
+			{
+				lock (oLock)
+				{
+					instance =new Container();
+				}
+			}
+			return instance;
+		}
+
+
+
 		//接口名称对应,类名称
-		private ConcurrentDictionary<string, TypeMapper> typeMapperDic;
+		private ConcurrentDictionary<string,TypeMapper> typeMapperDic;
 
 		public Container()
 		{
-			typeMapperDic = new ConcurrentDictionary<string, TypeMapper>();
+			typeMapperDic = new ConcurrentDictionary<string,TypeMapper>();
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="TTarget"></typeparam>
-		public void Register<TTarget>()
+		public ITypeMapperExternal Register<TTarget>()
 		{
-			Register(typeof(TTarget));
+			return  Register(typeof(TTarget));
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="TOriginal"></typeparam>
 		/// <typeparam name="TTarget"></typeparam>
-		public void Register<TOriginal,TTarget>()
+		public ITypeMapperExternal Register<TOriginal,TTarget>()
 		{
-			Register(typeof(TOriginal), typeof(TTarget));
+			return Register(typeof(TOriginal),typeof(TTarget));
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="targetType"></param>
-		public void Register(Type targetType)
+		public ITypeMapperExternal Register(Type targetType)
 		{
-			TypeMapper typeMapper = new TypeMapper(targetType);
-			Register(typeMapper);
+			return TypeMapperExternal.Create(RegisterReturnTypeMapper(targetType));
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="targetTypes"></param>
-		public void Register(Type [] targetTypes)
+		public ITypeMapperExternal Register(Type [] targetTypes)
 		{
+			List<TypeMapper> typeMappers= new List<TypeMapper>();
 			foreach (var item in targetTypes)
 			{
-				Register(item);
+				typeMappers.Add(RegisterReturnTypeMapper(item));
 			}
+			return TypeMapperExternal.Create(typeMappers);
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="originalType"></param>
 		/// <param name="targetType"></param>
-		public void Register(Type originalType, Type targetType)
+		public ITypeMapperExternal Register(Type originalType, Type targetType)
 		{
-			TypeMapper typeMapper = new TypeMapper(originalType,targetType);
-			Register(typeMapper);
+			TypeMapper typeMapper = GetTypeMapper(originalType,targetType);
+			if (typeMapper == null)
+			{
+				typeMapper = new TypeMapper(originalType, targetType);
+			}
+			 Register(typeMapper);
+			return TypeMapperExternal.Create(RegisterReturnTypeMapper(originalType,targetType));
 		}
+
+		
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="TTarget"></typeparam>
-		public void RegisterSingleton<TTarget>()
+		public ITypeMapperExternal RegisterSingleton<TTarget>()
 		{
-			RegisterSingleton(typeof(TTarget), typeof(TTarget));
+			return RegisterSingleton(typeof(TTarget), typeof(TTarget));
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="TOriginal"></typeparam>
 		/// <typeparam name="TTarget"></typeparam>
-		public void RegisterSingleton<TOriginal, TTarget>()
+		public ITypeMapperExternal RegisterSingleton<TOriginal, TTarget>()
 		{
-			RegisterSingleton(typeof(TOriginal), typeof(TTarget));
+			return RegisterSingleton(typeof(TOriginal), typeof(TTarget));
 		}
 
 
-		public void RegisterSingleton<TTarget>(TTarget target)where TTarget : class
+		public ITypeMapperExternal RegisterSingleton<TTarget>(TTarget target)where TTarget : class
 		{
 			TypeMapper typeMapper = new TypeMapper(target.GetType(), eLifeCycle.Single);
 			Register(typeMapper);
-			typeMapper.Instance =target;
+			typeMapper.SetInstance(typeMapper.TargetKey,target);
+			return TypeMapperExternal.Create(typeMapper);
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="Target"></param>
-		public void RegisterSingleton(Type Target)
+		public ITypeMapperExternal RegisterSingleton(Type Target)
 		{
-			RegisterSingleton(Target, Target);
+			return RegisterSingleton(Target, Target);
 		}
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="Original"></param>
 		/// <param name="Target"></param>
-		public void RegisterSingleton(Type Original,Type Target)
+		public ITypeMapperExternal RegisterSingleton(Type Original,Type Target)
 		{
-			TypeMapper typeMapper = new TypeMapper(Original,Target,eLifeCycle.Single);
+			TypeMapper typeMapper=GetTypeMapper(Original,Target);
+			if (typeMapper==null)
+			{
+				typeMapper = new TypeMapper(Original, Target, eLifeCycle.Single);
+			}
 			Register(typeMapper);
-			typeMapper.Instance = GetService(Target);
+			//typeMapper.SetInstance(Target.FullName, GetService(Target));
+			return TypeMapperExternal.Create(typeMapper);
 		}
 
 		/// <summary>
@@ -129,16 +164,18 @@ namespace Simple.BasicNet.Core
 		/// </summary>
 		/// <param name="original"></param>
 		/// <param name="target"></param>
-		public void RegisterAssambly(Assembly original,Assembly target)
+		public ITypeMapperExternal RegisterAssambly(Assembly original,Assembly target)
 		{
+			List<TypeMapper> typeMappers = new List<TypeMapper>();
 			foreach (var OriginalType in original.GetTypes().Where(t=>t.IsInterface))
 			{
 				if (target.GetTypes().Any(t=>!t.IsValueType&&t.IsAssignableTo(OriginalType)))
 				{
 					var TargetType = target.GetTypes().FirstOrDefault(t=>t.IsAssignableTo(OriginalType));
-					Register(OriginalType,TargetType);
+					typeMappers.Add(RegisterReturnTypeMapper(OriginalType,TargetType));
 				}
 			}
+			return TypeMapperExternal.Create(typeMappers);
 		}
 		/// <summary>
 		/// 
@@ -147,9 +184,14 @@ namespace Simple.BasicNet.Core
 		/// <returns></returns>
 		public Target GetService<Target>()
 		{
-			Type targetType= typeof(Target);
-			return (Target)GetService(targetType);
+			return GetService<Target>(string.Empty);
 		}
+		public Target GetService<Target>(string token)
+		{
+			Type targetType = typeof(Target);
+			return (Target)GetService(targetType,token);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -157,11 +199,15 @@ namespace Simple.BasicNet.Core
 		/// <returns></returns>
 		public object GetService(Type target)
 		{
-			if (target==typeof(IContainer)||target==typeof(Container))
+			return GetService(target,string.Empty);
+		}
+		public object GetService(Type target,string token)
+		{
+			if (target == typeof(IContainer) || target == typeof(Container))
 			{
-				return this;
+				return instance;
 			}
-			return Create(target);
+			return Create(target,token);
 		}
 		/// <summary>
 		/// 
@@ -181,25 +227,51 @@ namespace Simple.BasicNet.Core
 		/// </summary>
 		/// <param name="target"></param>
 		/// <returns></returns>
-		private object Create(Type target)
+		private object Create(Type target,string token)
 		{
 			object o = null;
-			if (typeMapperDic.Where(mapper => mapper.Value.IsTargetType(target)).Any())
+			TypeMapper typeMapper = FindTargetType(target,token);
+			if (typeMapper!=null)
 			{
-				var typeMapper = typeMapperDic.FirstOrDefault(mapper => mapper.Value.IsTargetType(target)).Value;
-				//单例就返回
-				if (typeMapper.LifeCycle == eLifeCycle.Single&&typeMapper.Instance!=null)
-				{
-					return typeMapper.Instance;
-				}
 				//初始化构造方法
-				o = Activator.CreateInstance(typeMapper.Target,CreateParameters(typeMapper.Target.GetConstructors().FirstOrDefault()));
+				if (token==string.Empty)
+				{
+					 token = typeMapper.TargetKey;
+
+				}
+				//单例就返回
+				o = typeMapper.GetInstance(token);
+				if (typeMapper.LifeCycle == eLifeCycle.Single && o != null)
+				{
+					return o;
+				}
+				object[] oParams = CreateParameters(typeMapper.GetTargetType(token).GetConstructors().FirstOrDefault());
+				o = Activator.CreateInstance(typeMapper.GetTargetType(token),oParams);
 				//配置属性
-
-				CreateProperties(typeMapper.Target,o);
-
+				if (typeMapper.IsAutowired)
+				{
+					CreateProperties(typeMapper.GetTargetType(token), o,typeMapper.AutowiredType);
+				}
+				if (typeMapper.LifeCycle == eLifeCycle.Single)
+				{
+					typeMapper.SetInstance(token,o);
+				}
 			}
 			return o;
+		}
+
+		private TypeMapper FindTargetType(Type target, string token)
+		{
+			TypeMapper typeMapper = null;
+			if (typeMapperDic.ContainsKey(target.FullName))
+			{
+				typeMapper = typeMapperDic[target.FullName];
+			}
+			else if (typeMapperDic.Any(Mapper => Mapper.Value.Target.ContainsKey(target.FullName)))
+			{
+				typeMapper = typeMapperDic.FirstOrDefault(Mapper => Mapper.Value.Target.ContainsKey(target.FullName)).Value;
+			}
+			return typeMapper;
 		}
 		/// <summary>
 		/// 
@@ -215,7 +287,12 @@ namespace Simple.BasicNet.Core
 			int i = 0;
 			foreach (var Parameter in constructor.GetParameters())
 			{
-				Params[i] = GetService(Parameter.ParameterType);
+				string token = string.Empty;
+				if (Parameter.IsDefined(typeof(InstanceKeyAttribute)))
+				{
+					token = Parameter.GetCustomAttribute<InstanceKeyAttribute>().GetKey();
+				}
+				Params[i] = GetService(Parameter.ParameterType,token);
 				i++;
 			}
 			return Params;
@@ -225,13 +302,47 @@ namespace Simple.BasicNet.Core
 		/// </summary>
 		/// <param name="Type"></param>
 		/// <param name="o"></param>
-		private void CreateProperties(Type Type,object o)
+		private void CreateProperties(Type Type,object o,Type AutowiredType)
 		{
 			foreach (var Property in Type.GetProperties().Where(p=>p.IsDefined(typeof(AutowiredAttribute))))
 			{
-				Property.SetValue(o,GetService(Property.PropertyType));
+				string token=string.Empty;
+				if (Property.IsDefined(typeof(InstanceKeyAttribute)))
+				{
+					token = Property.GetCustomAttribute<InstanceKeyAttribute>().GetKey();
+				}
+				Property.SetValue(o,GetService(Property.PropertyType,token));
 			}
 		}
-		
+
+		private TypeMapper GetTypeMapper(Type Original,Type target)
+		{
+			TypeMapper typeMapper = null;
+			if (typeMapperDic.ContainsKey(Original.FullName))
+			{
+				typeMapper = typeMapperDic[Original.FullName];
+				typeMapper.AddTarget(target);
+			}
+			return typeMapper;
+		}
+
+		private TypeMapper RegisterReturnTypeMapper(Type originalType, Type targetType)
+		{
+			TypeMapper typeMapper = GetTypeMapper(originalType, targetType);
+			if (typeMapper == null)
+			{
+				typeMapper = new TypeMapper(originalType, targetType);
+			}
+			Register(typeMapper);
+			return typeMapper;
+		}
+
+		private TypeMapper RegisterReturnTypeMapper(Type targetType)
+		{
+			TypeMapper typeMapper = new TypeMapper(targetType);
+			Register(typeMapper);
+			return typeMapper;
+		}
+
 	}
 }

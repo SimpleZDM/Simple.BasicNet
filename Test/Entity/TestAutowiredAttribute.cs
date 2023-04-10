@@ -6,33 +6,16 @@ using System.Threading.Tasks;
 
 /*********************************************************
  * 命名空间 Test.Entity
- * 接口名称 TestD
+ * 接口名称 TestAutowiredAttribute
  * 开发人员：11920
- * 创建时间：2023/4/7 15:47:57
+ * 创建时间：2023/4/10 14:38:10
  * 描述说明：
  * 更改历史：
  * 
  * *******************************************************/
 namespace Test.Entity
 {
-	public class TestD: ITestD
+	internal class TestAutowiredAttribute:Attribute
 	{
-		public void Run()
-		{
-			Console.WriteLine("Run testD!");
-		}
-	}
-	public class TestD1 : ITestD
-	{
-		public void Run()
-		{
-			Console.WriteLine("Run testD1!");
-		}
-	}
-
-	public interface ITestD
-	{
-		public void Run();
-		
 	}
 }

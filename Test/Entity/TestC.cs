@@ -21,9 +21,18 @@ namespace Test
 	{
 		[Autowired]
 		public ITestB testB { get; set; }
-		public TestC()
-		{
 
+
+		[Autowired]
+		[InstanceKey(typeof(TestD1))]
+		public ITestD testd1 { get; set; }
+		[TestAutowired]
+		[InstanceKey(typeof(TestD))]
+		public ITestD testd { get; set; }
+		public ITestD ctorTest { get; set; }
+		public TestC([InstanceKey(typeof(TestD))] ITestD testD)
+		{
+			ctorTest = testD;
 		} 
 	}
 

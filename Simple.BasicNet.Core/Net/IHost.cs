@@ -1,5 +1,6 @@
 ﻿using Simple.BasicNet.Core.Configuration;
 using Simple.BasicNet.Core.Handle;
+using Simple.BasicNet.Core.Schedule;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,11 +21,12 @@ namespace Simple.BasicNet.Core.Net
 {
 	public interface IHost
 	{
-		public IHost ConfigutionMessageHandle<TMessageHandle>() where TMessageHandle : IMessageHandle;
-		public IHost ConfigutionContainer(IContainer container);
-		public IHost Start(Action<ServiceConfigution> SetConfigution);
-		public IHost Start(string ConfigurationPath);
 		public IHost Start();
-		public IHost CheckHeart();
+		public IHost Start(string ConfigurationPath);
+		public IHost Start(Action<ServiceConfigution> SetConfigution);
+		public IHost ReplaceContainer(IContainer container);
+		public IHost Regster(Action<IContainer> action);
+		public IHost RegisterSchedule(Action<IScheduleManager> action);
+		public IHost ConfigutionMessageHandle<TMessageHandle>() where TMessageHandle : IMessageHandle;
 	}
 }

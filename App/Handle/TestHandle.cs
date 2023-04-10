@@ -1,4 +1,5 @@
-﻿using Simple.BasicNet.Core.Atrributes;
+﻿using Simple.BasicNet.Core;
+using Simple.BasicNet.Core.Atrributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,9 @@ namespace App.Handle
 	[NumberRange(31, 40)]
 	public class TestHandle:AHandle
 	{
-		public TestHandle() { }
+		[Autowired]
+		IContainer Container { get; set; }
+		public TestHandle(IContainer container) { }
 
 		[MessageNumber(33)]
 		public void Test33()

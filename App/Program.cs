@@ -14,8 +14,11 @@ public class Program
 
 		var Cinfiguration =JsonConvert.DeserializeObject<ServiceConfigution>(str);
 
-		IHost host= Host.BuilderHost().CheckHeart();
-		host.Start((configution) =>
+		IHost host= Host.BuilderHost().
+		RegisterSchedule((schedule) =>
+		{
+
+		}).Start((configution) =>
 		{
 			configution.Port = 1234;
 			configution.Backlog = 200;

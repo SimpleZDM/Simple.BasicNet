@@ -5,34 +5,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 /*********************************************************
- * 命名空间 Test.Entity
- * 接口名称 TestD
+ * 命名空间 Simple.BasicNet.Core.Schedule
+ * 接口名称 ISchedule
  * 开发人员：11920
- * 创建时间：2023/4/7 15:47:57
+ * 创建时间：2023/4/10 14:56:50
  * 描述说明：
  * 更改历史：
  * 
  * *******************************************************/
-namespace Test.Entity
+namespace Simple.BasicNet.Core.Schedule
 {
-	public class TestD: ITestD
+	public interface ISchedule
 	{
-		public void Run()
-		{
-			Console.WriteLine("Run testD!");
-		}
-	}
-	public class TestD1 : ITestD
-	{
-		public void Run()
-		{
-			Console.WriteLine("Run testD1!");
-		}
-	}
-
-	public interface ITestD
-	{
-		public void Run();
 		
+		public void Run();
+		public ScheduleInfo ScheduleInfo { get; set; }
+		
+
 	}
 }
