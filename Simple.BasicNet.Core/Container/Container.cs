@@ -304,7 +304,11 @@ namespace Simple.BasicNet.Core
 		/// <param name="o"></param>
 		private void CreateProperties(Type Type,object o,Type AutowiredType)
 		{
-			foreach (var Property in Type.GetProperties().Where(p=>p.IsDefined(typeof(AutowiredAttribute))))
+			foreach (var Property in Type.GetProperties(
+				BindingFlags.NonPublic 
+				| BindingFlags.Instance
+				|BindingFlags.Public).
+				Where(p=>p.IsDefined(AutowiredType)))
 			{
 				string token=string.Empty;
 				if (Property.IsDefined(typeof(InstanceKeyAttribute)))

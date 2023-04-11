@@ -26,6 +26,7 @@ namespace Simple.BasicNet.Core.Net
 	{
 		IContainer container;
         ServiceConfigution serviceConfigution;
+		ILogger logger;
 		IPretty prettyCore { get; set; }
 		/// <summary>
 		/// 
@@ -41,6 +42,8 @@ namespace Simple.BasicNet.Core.Net
 		/// <returns></returns>
 		public IHost Start()
 		{
+			var scheduleManager = container.GetService<IScheduleManager>();
+			scheduleManager.Start();
 			prettyCore = container.GetService<IPretty>();
 			prettyCore.Start();
 			return this;
@@ -69,6 +72,7 @@ namespace Simple.BasicNet.Core.Net
 			{
 				SetConfigution.Invoke(serviceConfigution);
 			}
+			
 			return Start();
 		}
 		/// <summary>
@@ -111,7 +115,6 @@ namespace Simple.BasicNet.Core.Net
 			}
 			var scheduleManager = container.GetService<IScheduleManager>();
 			action.Invoke(scheduleManager);
-			scheduleManager.Start();
 			return this;
 		}
 		/// <summary>
@@ -139,13 +142,16 @@ namespace Simple.BasicNet.Core.Net
 		/// <returns></returns>
 		private void Initalization()
 		{
+			container.RegisterSingleton<ILogger,Logger>().Autowird();
 			container.Register<HandleContext>().Autowird();
 			container.RegisterSingleton<ServiceConfigution>().Autowird();
 			container.RegisterSingleton<IMessageHandle,MessageHandle>().Autowird();
             container.RegisterSingleton<IClientManager, ClientManager>().Autowird();
 			container.RegisterSingleton<IScheduleManager, ScheduleManager>().Autowird();
-			container.RegisterSingleton<IPretty, Pretty>().Autowird();
-			ConsoleLog.DEBUGLOG("容器初始化成功!");
+			container.RegisterSingleton<IPretty,Pretty>().Autowird();
+			container.Register<IScheduleHandle, ScheduleHandle>().Autowird();
+		    logger = container.GetService<ILogger>();
+			logger.Info("容器初始化成功!");
 		}
 	}
 }

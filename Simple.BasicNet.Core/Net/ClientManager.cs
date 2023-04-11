@@ -43,6 +43,37 @@ namespace Simple.BasicNet.Core.Net
 			}
 		}
 
+		public IEnumerable<ClientSocket> GetClients()
+		{
+			return clientsDic.Values;
+		}
+
+		public ClientSocket GetClient(Guid key)
+		{
+			if (clientsDic.ContainsKey(key))
+			{
+				return clientsDic[key];
+			}
+			return null;
+		}
+		public IEnumerable<ClientSocket> GetClient(Guid [] keys)
+		{
+			List<ClientSocket> clients = new List<ClientSocket>();
+			foreach (var key in keys)
+			{
+				var client=GetClient(key);
+				if (client!=null)
+				{
+					clients.Add(client);
+				}
+			}
+			return clients;
+		}
+
+		public int GetClientCount()
+		{
+			return clientsDic.Count();
+		}
 
 	}
 }

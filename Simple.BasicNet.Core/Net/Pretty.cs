@@ -26,6 +26,9 @@ namespace Simple.BasicNet.Core.Net
 		private ServiceConfigution serviceConfigution { get; set; }	
 		[Autowired]
 		private IClientManager clientManager { get;set; }
+
+		[Autowired]
+		private ILogger logger { get; set; }
 		public Pretty()
 		{
 		}
@@ -54,13 +57,16 @@ namespace Simple.BasicNet.Core.Net
 						var client = pretty.Accept();
 						if (clientManager.AddClient(client))
 						{
-							ConsoleLog.DEBUGLOG($"{client.RemoteEndPoint.ToString()}链接成功!");
+							logger.Info($"{client.RemoteEndPoint}链接成功!");
 						}
 					}
 					catch (Exception ex)
 					{
-						ConsoleLog.DEBUGLOG(ex.Message);
-						ConsoleLog.DEBUGLOG(ex.InnerException.Message);
+						logger.Error(ex.Message);
+						if (ex.InnerException!=null)
+						{
+							logger.Error(ex.InnerException.Message);
+						}
 					}
 
 				}

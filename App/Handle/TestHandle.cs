@@ -29,14 +29,14 @@ namespace App.Handle
 		{
 			string msg = "我是:TestHandle;我的消息号码为33！";
 			Console.WriteLine(msg);
-			context.Send(msg);
+			context.SendUTF8(msg);
 		}
 		[MessageNumber(32)]
 		public void Test32()
 		{
 			string msg = "我是:TestHandle;我的消息号码为32！";
 			Console.WriteLine(msg);
-			context.Send(msg);
+			context.SendUTF8(msg);
 		}
 	}
 }

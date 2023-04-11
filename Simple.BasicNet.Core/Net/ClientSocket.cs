@@ -18,7 +18,7 @@ using Simple.BasicNet.Core.Handle;
  * *******************************************************/
 namespace Simple.BasicNet.Core.Net
 {
-    public class ClientSocket
+    public class ClientSocket: IDisposable
 	{
 	
 		public ClientSocket(IContainer container,Socket socket)
@@ -32,26 +32,39 @@ namespace Simple.BasicNet.Core.Net
 			this.container = container;
 			messageHandle = container.GetService<IMessageHandle>();
 			clientManager=container.GetService<IClientManager>();
-
+			logger=container.GetService<ILogger>();
 			receiveBuffer =new byte[1024*1024];
 			Receive();
 		}
-		public Socket Client { get { return client; } set { client = value; } }
-		public Guid ConnectionID { get { return connectionID; } set { connectionID = value; } }
+		public Socket Client { get { return client; }private set { client = value; } }
+		public Guid ConnectionID { get { return connectionID; }private set { connectionID = value; } }
 
 		private Socket client;
 		private Guid connectionID;
 		private byte[] receiveBuffer;
-		private byte[] sendBuffer;
 		private IMessageHandle messageHandle;
 		private IContainer container;
 		private IClientManager clientManager;
+		private ILogger logger;
 
 		public void Send(byte[] buffer)
 		{
-			client.Send(buffer);
+			try
+			{
+				if (client.Connected)
+					client.Send(buffer);
+			}
+			catch (Exception ex)
+			{
+				logger.Error(ex.Message);
+				if (ex.InnerException != null)
+				{
+					logger.Error(ex.InnerException.Message);
+				}
+				Dispose();
+			}
 		}
-		public void Receive()
+		private void Receive()
 		{
 			HandleContext context = container.GetService<HandleContext>();
 
@@ -64,6 +77,8 @@ namespace Simple.BasicNet.Core.Net
 				{
 					try
 					{
+						if (client.Connected)
+							break;
 						context.Length = client.Receive(receiveBuffer);
 						context.ReceiveBuffer=new byte[context.Length];
 						Array.Copy(receiveBuffer,context.ReceiveBuffer,context.Length);
@@ -75,17 +90,24 @@ namespace Simple.BasicNet.Core.Net
 					catch (Exception ex)
 					{
 
-						ConsoleLog.DEBUGLOG(ex.Message);
-						ConsoleLog.DEBUGLOG(ex.InnerException.Message);
-
-						client.Close();
-						client.Disconnect(true);
-
-						clientManager.RemoveClient(ConnectionID);
+						logger.Error(ex.Message);
+						if (ex.InnerException!=null)
+						{
+							logger.Error(ex.InnerException.Message);
+						}
+						Dispose();
+						break;
 					}
 				}
 			});
 
+		}
+
+		public void Dispose()
+		{
+			client.Dispose();
+			clientManager.RemoveClient(ConnectionID);
+			logger.Info($"{ConnectionID}断开链接!");
 		}
 	}
 }

@@ -18,9 +18,11 @@ namespace Simple.BasicNet.Core.Schedule
 	internal class ScheduleHandle:IScheduleHandle
 	{
 		private ISchedule schedule;
+		private ILogger logger;
 
-		public ScheduleHandle()
+		public ScheduleHandle(ILogger logger)
 		{
+			this.logger = logger;
 		}
 
 		public void SetSchedule(ISchedule schedule)
@@ -43,10 +45,11 @@ namespace Simple.BasicNet.Core.Schedule
 					try
 					{
 					    schedule.Run();
-						Task.Delay(schedule.ScheduleInfo.Period);
+						Task.Delay(schedule.ScheduleInfo.Period).Wait();
 					}
 					catch (Exception ex)
 					{
+						logger.Error(ex.Message);
 						schedule.ScheduleInfo.ErrorMessage = ex.Message;
 						schedule.ScheduleInfo.ScheduleStatus = eScheduleStatus.Exception;
 						break;

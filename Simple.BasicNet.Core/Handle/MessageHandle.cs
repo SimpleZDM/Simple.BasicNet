@@ -26,11 +26,13 @@ namespace Simple.BasicNet.Core.Handle
         IContainer container;
 
         List<HandleLabel> handleLabels;
+        ILogger logger;
         public MessageHandle(IContainer container)
         {
             this.container = container;
             handleLabels = new List<HandleLabel>();
-            Initalization();
+            logger = container.GetService<ILogger>();
+			Initalization();
 
         }
 
@@ -85,7 +87,7 @@ namespace Simple.BasicNet.Core.Handle
             }
             else
             {
-                ConsoleLog.DEBUGLOG($"消息号码错误!");
+				logger.Error($"消息号{context.CommandID}不存在处理的方法,请检查!");
             }
         }
 

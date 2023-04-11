@@ -30,7 +30,7 @@ namespace App.Handle
 		{
 			string msg = "我是:Ahandle;我的消息号码为11！";
 			Console.WriteLine("我是:Ahandle;我的消息号码为11！");
-			context.Send(msg);
+			context.SendASCII(msg);
 		}
 
 
@@ -39,7 +39,7 @@ namespace App.Handle
 		{
 			string msg = "我是:Ahandle;我的消息号码为12！";
 			Console.WriteLine("我是:Ahandle;我的消息号码为12！");
-			context.Send(msg);
+			context.SendUTF8(msg);
 		}
 	}
 }

@@ -10,8 +10,12 @@ namespace Simple.BasicNet.Core.Net
 {
 	public interface IClientManager
 	{
-
 		public bool AddClient(Socket client);
 		public void RemoveClient(Guid ClientID);
+		public IEnumerable<ClientSocket> GetClients();
+		public ClientSocket GetClient(Guid key);
+		public IEnumerable<ClientSocket> GetClient(Guid[] keys);
+
+		public int GetClientCount();
 	}
 }

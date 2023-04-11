@@ -19,7 +19,8 @@ namespace Simple.BasicNet.Core.Schedule
 	{
 		public ScheduleInfo() 
 		{
-			Id=Guid.NewGuid();
+			Period = 1000 * 10;//系统默认是十秒等待时间
+			Id =Guid.NewGuid();
 		}
 		public eScheduleStatus ScheduleStatus { get { return scheduleStatus; } set { scheduleStatus = value; } }
 		public string ErrorMessage { get { return errorMessage; } set { errorMessage = value; } }
